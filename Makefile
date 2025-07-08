@@ -1,4 +1,4 @@
-dev_native:
+dev:
 	clang -O0 -Wall -Wpedantic -Wextra -march=native src/main.c -o out/aoc_dev
 
 release_native:
