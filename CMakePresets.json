@@ -5,7 +5,7 @@
             "name": "Clang 20.1.7 x86_64-pc-linux-gnu",
             "displayName": "Clang 20.1.7 x86_64-pc-linux-gnu",
             "description": "Using compilers: C = /usr/sbin/clang, CXX = /usr/sbin/clang++",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "binaryDir": "${sourceDir}/out/",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_C_COMPILER": "/usr/sbin/clang",
