@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(advent_of_c VERSION 0.1.0 LANGUAGES C)
 
-add_executable(aoc main.c)
+add_executable(aoc src/main.c)
 
