@@ -45,9 +45,11 @@ extern unsigned long int strtoul(const char *__restrict __nptr,
                                  char **__restrict __endptr, int __base) __THROW
     __nonnull((1));
 
-char *read_file(const char *path, size_t *size) {
+char *read_file(const char *path) {
   int fd = -1;
+  size_t size;
   void *mapped_data = NULL;
+  struct stat st;
   register long syscall_ret __asm__("rax");
 
 #define SYSCALL(number, arg1, arg2, arg3)                                      \
@@ -56,25 +58,24 @@ char *read_file(const char *path, size_t *size) {
                        : "a"(number), "D"(arg1), "S"(arg2), "d"(arg3)          \
                        : "rcx", "r11", "memory")
 
-  // open the file
   SYSCALL(SYS_OPEN, path, O_RDONLY | O_CLOEXEC, 0);
   if ((fd = syscall_ret) < 0)
-    return NULL; // if we fail return null
+    return NULL;
 
-  // mem map file
+  SYSCALL(SYS_FSTAT, fd, &st, 0);
+  size = st.st_size;
 
   register long mmap_flags __asm__("r10") = MAP_PRIVATE;
   register long mmap_fd __asm__("r8") = fd;
   register long mmap_offset __asm__("r9") = 0;
   __asm__ __volatile__("syscall"
                        : "=a"(mapped_data)
-                       : "a"(SYS_MMAP), "D"(0), "S"(*size), "d"(PROT_READ),
+                       : "a"(SYS_MMAP), "D"(0), "S"(size), "d"(PROT_READ),
                          "r"(mmap_flags), "r"(mmap_fd), "r"(mmap_offset)
                        : "rcx", "r11", "memory");
 
-  // close file descriptor
   SYSCALL(SYS_CLOSE, fd, 0, 0);
-  return mapped_data;
+  return (mapped_data == MAP_FAILED) ? NULL : mapped_data;
 
 #undef SYSCALL
 }
@@ -167,8 +168,7 @@ void radix_sort(int *array, int offset, int end, int shift) {
 
 char *DAY_1(void) {
 #define MAX_LINES 1000
-  size_t size = 12289; // 1000 lines
-  char *data = read_file("./input/a", &size);
+  char *data = read_file("./input/a");
 
   int left[MAX_LINES] __attribute__((aligned(64)));
   int right[MAX_LINES] __attribute__((aligned(64)));
