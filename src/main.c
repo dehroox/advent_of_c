@@ -1,53 +1,17 @@
-#include <stddef.h>
-#include <sys/stat.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
 
-#define SYS_OPEN 2
-#define SYS_FSTAT 5
-#define SYS_MMAP 9
-#define SYS_CLOSE 3
-#define O_RDONLY 0
-#define O_CLOEXEC 02000000
-#define PROT_READ 0x1
-#define MAP_PRIVATE 0x02
-#define MAP_FAILED ((void *)-1)
-#define CLOCKS_PER_SEC ((__clock_t)1000000)
 #define BHRED "\033[1;91m"
 #define COLOR_RESET "\033[0m"
 
-// GTFO PULLING IN ENTIRE HEADER FILES FOR 1 OR 2 MACROS
-extern int sprintf(char *__restrict __s, const char *__restrict __format,
-                   ...) __THROWNL;
-
-extern int abs(int __x) __THROW __attribute__((__const__)) __wur;
-
-extern void free(void *__ptr) __THROW;
-
-extern __clock_t clock(void) __THROW;
-
-extern char *strdup(const char *__s) __THROW __attribute_malloc__
-    __nonnull((1));
-
-extern int printf(const char *__restrict __format, ...);
-
-extern void *malloc(size_t __size) __THROW __attribute_malloc__
-    __attribute_alloc_size__((1)) __wur;
-
-extern char *strtok(char *__restrict __s,
-                    const char *__restrict __delim) __THROW __nonnull((2));
-
-extern int strcmp(const char *__s1, const char *__s2) __THROW __attribute_pure__
-    __nonnull((1, 2));
-
-extern int atoi(const char *__nptr) __THROW __attribute_pure__
-    __nonnull((1)) __wur;
-
-extern unsigned long int strtoul(const char *__restrict __nptr,
-                                 char **__restrict __endptr, int __base) __THROW
-    __nonnull((1));
-
-char *read_file(const char *path) {
+char *read_file(const char *path, size_t *size) {
   int fd = -1;
-  size_t size;
   void *mapped_data = NULL;
   struct stat st;
   register long syscall_ret __asm__("rax");
@@ -58,23 +22,23 @@ char *read_file(const char *path) {
                        : "a"(number), "D"(arg1), "S"(arg2), "d"(arg3)          \
                        : "rcx", "r11", "memory")
 
-  SYSCALL(SYS_OPEN, path, O_RDONLY | O_CLOEXEC, 0);
+  SYSCALL(SYS_open, path, O_RDONLY | O_CLOEXEC, 0);
   if ((fd = syscall_ret) < 0)
     return NULL;
 
-  SYSCALL(SYS_FSTAT, fd, &st, 0);
-  size = st.st_size;
+  SYSCALL(SYS_fstat, fd, &st, 0);
+  *size = st.st_size;
 
   register long mmap_flags __asm__("r10") = MAP_PRIVATE;
   register long mmap_fd __asm__("r8") = fd;
   register long mmap_offset __asm__("r9") = 0;
   __asm__ __volatile__("syscall"
                        : "=a"(mapped_data)
-                       : "a"(SYS_MMAP), "D"(0), "S"(size), "d"(PROT_READ),
+                       : "a"(SYS_mmap), "D"(0), "S"(*size), "d"(PROT_READ),
                          "r"(mmap_flags), "r"(mmap_fd), "r"(mmap_offset)
                        : "rcx", "r11", "memory");
 
-  SYSCALL(SYS_CLOSE, fd, 0, 0);
+  SYSCALL(SYS_close, fd, 0, 0);
   return (mapped_data == MAP_FAILED) ? NULL : mapped_data;
 
 #undef SYSCALL
@@ -168,7 +132,8 @@ void radix_sort(int *array, int offset, int end, int shift) {
 
 char *DAY_1(void) {
 #define MAX_LINES 1000
-  char *data = read_file("./input/a");
+  size_t size;
+  char *data = read_file("./input/a", &size);
 
   int left[MAX_LINES] __attribute__((aligned(64)));
   int right[MAX_LINES] __attribute__((aligned(64)));
@@ -189,6 +154,7 @@ char *DAY_1(void) {
   }
 
   free(data_copy);
+  munmap(data, size);
 
   radix_sort(left, 0, 1000, 24);
   radix_sort(right, 0, 1000, 24);
