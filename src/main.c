@@ -86,20 +86,20 @@ char *DAY_25(void) { return "25"; }
 
 typedef char *(*FunctionPointer)(void);
 const FunctionPointer DAYS[26] = {
-    &DAY_1,  &DAY_1,  &DAY_2,  &DAY_3,  &DAY_4,  &DAY_5,  &DAY_6,
+    &DAY_1,  &DAY_2,  &DAY_3,  &DAY_4,  &DAY_5,  &DAY_6,
     &DAY_7,  &DAY_8,  &DAY_9,  &DAY_10, &DAY_11, &DAY_12, &DAY_13,
     &DAY_14, &DAY_15, &DAY_16, &DAY_17, &DAY_18, &DAY_19, &DAY_20,
     &DAY_21, &DAY_22, &DAY_23, &DAY_24, &DAY_25};
 
 char *run(int day) {
-  if (DAYS[day])
+  if (--day >= 0 && day <= 24)
     return DAYS[day]();
   return "Unhandled Day";
 }
 
 int main(int argc, char *argv[]) {
   if (argc == 2) {
-    printf("\n%s\n", run(atoi(argv[1])));
+    printf("%s\n", run(atoi(argv[1])));
     return 0;
   }
 
