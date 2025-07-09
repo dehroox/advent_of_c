@@ -20,7 +20,7 @@ extern int strcmp(const char *__s1, const char *__s2) __THROW __attribute_pure__
 extern int atoi(const char *__nptr) __THROW __attribute_pure__
     __nonnull((1)) __wur;
 
-char *read_file(const char *path, int size) {
+char *read_file(const char *path, size_t *size) {
   int fd = -1;
   void *mapped_data = NULL;
   register long syscall_ret __asm__("rax");
@@ -43,7 +43,7 @@ char *read_file(const char *path, int size) {
     register long mmap_offset __asm__("r9") = 0;
     __asm__ __volatile__("syscall"
                          : "=a"(mapped_data)
-                         : "a"(SYS_MMAP), "D"(0), "S"(size), "d"(PROT_READ),
+                         : "a"(SYS_MMAP), "D"(0), "S"(*size), "d"(PROT_READ),
                            "r"(mmap_flags), "r"(mmap_fd), "r"(mmap_offset)
                          : "rcx", "r11", "memory");
   }
@@ -56,7 +56,9 @@ char *read_file(const char *path, int size) {
 }
 
 char *DAY_1(void) {
-  return read_file("./input/a", 14000); // 1000 lines, 14 bytes each line
+  size_t size = 14000; // 1000 lines, 14 bytes each line
+
+  return read_file("./input/a", &size);
 }
 char *DAY_2(void) { return "2"; }
 char *DAY_3(void) { return "3"; }
