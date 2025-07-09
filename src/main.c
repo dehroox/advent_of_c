@@ -165,7 +165,7 @@ char *DAY_1(void) {
   }
 
   static char final[8];
-  sprintf(final, "%d", difference);
+  snprintf(final, 8,"%d", difference);
   return final;
 }
 
