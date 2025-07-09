@@ -55,7 +55,7 @@ char *read_file(const char *path, size_t *size) {
 }
 
 char *DAY_1(void) {
-  size_t size = 14000; // 1000 lines, 14 bytes each line
+  size_t size = 12289; // 1000 lines
 
   return read_file("./input/a", &size);
 }
