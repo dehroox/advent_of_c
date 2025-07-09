@@ -37,16 +37,15 @@ char *read_file(const char *path, size_t *size) {
     return NULL; // if we fail return null
 
   // mem map file
-  {
-    register long mmap_flags __asm__("r10") = MAP_PRIVATE;
-    register long mmap_fd __asm__("r8") = fd;
-    register long mmap_offset __asm__("r9") = 0;
-    __asm__ __volatile__("syscall"
-                         : "=a"(mapped_data)
-                         : "a"(SYS_MMAP), "D"(0), "S"(*size), "d"(PROT_READ),
-                           "r"(mmap_flags), "r"(mmap_fd), "r"(mmap_offset)
-                         : "rcx", "r11", "memory");
-  }
+
+  register long mmap_flags __asm__("r10") = MAP_PRIVATE;
+  register long mmap_fd __asm__("r8") = fd;
+  register long mmap_offset __asm__("r9") = 0;
+  __asm__ __volatile__("syscall"
+                       : "=a"(mapped_data)
+                       : "a"(SYS_MMAP), "D"(0), "S"(*size), "d"(PROT_READ),
+                         "r"(mmap_flags), "r"(mmap_fd), "r"(mmap_offset)
+                       : "rcx", "r11", "memory");
 
   // close file descriptor
   SYSCALL(SYS_CLOSE, fd, 0, 0);
