@@ -20,7 +20,7 @@ extern int strcmp(const char *__s1, const char *__s2) __THROW __attribute_pure__
 extern int atoi(const char *__nptr) __THROW __attribute_pure__
     __nonnull((1)) __wur;
 
-void *read_file(const char *path, size_t *size) {
+char *read_file(const char *path, size_t *size) {
   int fd = -1;
   void *mapped_data = NULL;
   register long syscall_ret __asm__("rax");
