@@ -1,10 +1,9 @@
-#include <sys/mman.h>
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <stdio.h>
 #include <fcntl.h>
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/syscall.h>
 #include <time.h>
 
 #define BHRED "\033[1;91m"
@@ -26,7 +25,7 @@ char *read_file(const char *path, size_t *size) {
   if ((fd = syscall_ret) < 0)
     return NULL;
 
-  SYSCALL(SYS_fstat, fd, &st, 0);
+  SYSCALL(SYS_fstat, fd, st, 0);
   *size = st.st_size;
 
   register long mmap_flags __asm__("r10") = MAP_PRIVATE;
@@ -165,7 +164,7 @@ char *DAY_1(void) {
   }
 
   static char final[8];
-  snprintf(final, 8,"%d", difference);
+  snprintf(final, 8, "%d", difference);
   return final;
 }
 
@@ -195,14 +194,16 @@ char *DAY_24(void) { return "24"; }
 char *DAY_25(void) { return "25"; }
 
 typedef char *(*FunctionPointer)(void);
-const FunctionPointer DAYS[26] = {&DAY_1,  &DAY_2,  &DAY_3,  &DAY_4,  &DAY_5,
-                                  &DAY_6,  &DAY_7,  &DAY_8,  &DAY_9,  &DAY_10,
-                                  &DAY_11, &DAY_12, &DAY_13, &DAY_14, &DAY_15,
-                                  &DAY_16, &DAY_17, &DAY_18, &DAY_19, &DAY_20,
-                                  &DAY_21, &DAY_22, &DAY_23, &DAY_24, &DAY_25};
 
-char *run(int day) {
-  if (--day >= 0 && day <= 24)
+char *run(unsigned int day) {
+  static const FunctionPointer DAYS[26] = {
+      DAY_1,  DAY_2,  DAY_3,  DAY_4,  DAY_5,  DAY_6,  DAY_7,  DAY_8,  DAY_9,
+      DAY_10, DAY_11, DAY_12, DAY_13, DAY_14, DAY_15, DAY_16, DAY_17, DAY_18,
+      DAY_19, DAY_20, DAY_21, DAY_22, DAY_23, DAY_24, DAY_25};
+
+  --day; // index at 1
+
+  if (day < sizeof(DAYS) / sizeof DAYS[0])
     return DAYS[day]();
   return "Unhandled Day";
 }
