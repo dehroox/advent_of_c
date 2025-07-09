@@ -109,13 +109,14 @@ policies, either expressed or implied, of Erik Gorset.
 */
 
 void insertion_sort(int *array, int offset, int end) {
-  int x, y, temp;
-  for (x = offset; x < end; ++x) {
-    for (y = x; y > offset && array[y - 1] > array[y]; y--) {
-      temp = array[y];
+  for (int x = offset + 1; x < end; x++) {
+    int temp = array[x];
+    int y = x;
+    while (y > offset && array[y - 1] > temp) {
       array[y] = array[y - 1];
-      array[y - 1] = temp;
+      y--;
     }
+    array[y] = temp;
   }
 }
 
@@ -169,8 +170,8 @@ char *DAY_1(void) {
   size_t size = 12289; // 1000 lines
   char *data = read_file("./input/a", &size);
 
-  int left[MAX_LINES];
-  int right[MAX_LINES];
+  int left[MAX_LINES] __attribute__((aligned(64)));
+  int right[MAX_LINES] __attribute__((aligned(64)));
 
   char *data_copy = strdup(data);
   char *line = strtok(data_copy, "\n");
@@ -196,10 +197,9 @@ char *DAY_1(void) {
   for (int i = 0; i < MAX_LINES; ++i) {
     difference += abs(left[i] - right[i]);
   }
-  char *final = malloc(8);
 
+  static char final[8];
   sprintf(final, "%d", difference);
-
   return final;
 }
 
@@ -244,7 +244,8 @@ char *run(int day) {
 int main(int argc, char *argv[]) {
   __clock_t begin = clock();
   if (argc == 2) {
-    printf("%s\n", run(atoi(argv[1])));
+    char *result = run(atoi(argv[1]));
+    printf("%s\n", result);
     __clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("\nSeconds spent: %f\n", time_spent);
