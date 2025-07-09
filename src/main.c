@@ -3,46 +3,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/syscall.h>
+#include <sys/stat.h>
 #include <time.h>
+#include <unistd.h>
 
 #define BHRED "\033[1;91m"
 #define COLOR_RESET "\033[0m"
 
-char *read_file(const char *path, size_t *size) {
-  int fd = -1;
-  void *mapped_data = NULL;
-  struct stat st;
-  register long syscall_ret __asm__("rax");
+char* read_file(const char* path, size_t* size) {
+    int fd = open(path, O_RDONLY | O_CLOEXEC);
+    if (fd < 0) return NULL;
 
-#define SYSCALL(number, arg1, arg2, arg3)                                      \
-  __asm__ __volatile__("syscall"                                               \
-                       : "=a"(syscall_ret)                                     \
-                       : "a"(number), "D"(arg1), "S"(arg2), "d"(arg3)          \
-                       : "rcx", "r11", "memory")
+    struct stat st;
+    if (fstat(fd, &st) < 0) {
+        close(fd);
+        return NULL;
+    }
+    *size = st.st_size;
 
-  SYSCALL(SYS_open, path, O_RDONLY | O_CLOEXEC, 0);
-  if ((fd = syscall_ret) < 0)
-    return NULL;
+    void* mapped_data = mmap(NULL, *size, PROT_READ, MAP_PRIVATE, fd, 0);
+    close(fd);
 
-  SYSCALL(SYS_fstat, fd, st, 0);
-  *size = st.st_size;
-
-  register long mmap_flags __asm__("r10") = MAP_PRIVATE;
-  register long mmap_fd __asm__("r8") = fd;
-  register long mmap_offset __asm__("r9") = 0;
-  __asm__ __volatile__("syscall"
-                       : "=a"(mapped_data)
-                       : "a"(SYS_mmap), "D"(0), "S"(*size), "d"(PROT_READ),
-                         "r"(mmap_flags), "r"(mmap_fd), "r"(mmap_offset)
-                       : "rcx", "r11", "memory");
-
-  SYSCALL(SYS_close, fd, 0, 0);
-  return (mapped_data == MAP_FAILED) ? NULL : mapped_data;
-
-#undef SYSCALL
+    return (mapped_data == MAP_FAILED) ? NULL : mapped_data;
 }
-
 /*
 Copyright 2011 Erik Gorset. All rights reserved.
 
@@ -209,11 +192,11 @@ char *run(unsigned int day) {
 }
 
 int main(int argc, char *argv[]) {
-  __clock_t begin = clock();
+  clock_t begin = clock();
   if (argc == 2) {
     char *result = run(atoi(argv[1]));
     printf("%s\n", result);
-    __clock_t end = clock();
+    clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("\nSeconds spent: %f\n", time_spent);
     return 0;
